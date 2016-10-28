@@ -4,18 +4,18 @@ extern crate nom;
 use nom::{IResult, be_u32};
 
 pub struct IndexEntry {
-    ctime_s: u32,
-    ctime_ns: u32,
-    mtime_s: u32,
-    mtime_ns: u32,
-    dev: u32,
-    ino: u32,
-    mode: u32,
-    uid: u32,
-    gid: u32,
-    file_size: u32,
-    sha_1: [u8; 20],
-    flags: u16,
+    pub ctime_s: u32,
+    pub ctime_ns: u32,
+    pub mtime_s: u32,
+    pub mtime_ns: u32,
+    pub dev: u32,
+    pub ino: u32,
+    pub mode: u32,
+    pub uid: u32,
+    pub gid: u32,
+    pub file_size: u32,
+    pub sha_1: [u8; 20],
+    pub flags: u16,
 }
 
 pub struct IndexExtension {
@@ -48,16 +48,14 @@ pub fn parse_header(input: &[u8]) -> IResult<&[u8], IndexHeader> {
 }
 
 pub struct Index {
-    header: IndexHeader,
-    entries: Vec<IndexEntry>,
-    extensions: Vec<IndexExtension>,
-    sha1_checksum: [u8; 20],
+    pub header: IndexHeader,
+    pub entries: Vec<IndexEntry>,
+    pub extensions: Vec<IndexExtension>,
+    pub sha1_checksum: [u8; 20],
 }
 
 #[cfg(test)]
 mod tests {
-    use std::io::prelude;
-    use std::fs::File;
     use super::*;
     #[test]
     fn test_parse_header() {
