@@ -1,0 +1,8 @@
+[package]
+name = "git"
+version = "0.1.0"
+authors = ["Raphael Nestler <raphael.nestler@gmail.com>"]
+
+[dependencies]
+sha1 = "^0.2"
+nom = "*"
