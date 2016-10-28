@@ -53,6 +53,7 @@ pub fn parse_index_entry(input: &[u8]) -> IResult<&[u8], IndexEntry> {
     )
 }
 
+#[derive(Debug)]
 pub struct IndexExtension<'a> {
     /// Signature starts with 'A'-'Z'
     pub signature: &'a [u8],
@@ -98,11 +99,29 @@ pub fn parse_header(input: &[u8]) -> IResult<&[u8], IndexHeader> {
           )
 }
 
+#[derive(Debug)]
 pub struct Index<'a> {
     pub header: IndexHeader,
     pub entries: Vec<IndexEntry<'a>>,
     pub extensions: Vec<IndexExtension<'a>>,
-    pub sha1_checksum: [u8; 20],
+    pub sha1_checksum: &'a[u8],
+}
+
+pub fn parse_index(input: &[u8]) -> IResult<&[u8], Index> {
+    chain!(input,
+           header: parse_header ~
+           entries: count!(parse_index_entry, header.index_entries as usize) ~
+           extensions: many0!(parse_index_extension) ~
+           sha1_checksum: take!(20),
+           || {
+               Index {
+                   header: header,
+                   entries: entries,
+                   extensions: extensions,
+                   sha1_checksum: sha1_checksum,
+               }
+           }
+          )
 }
 
 #[cfg(test)]
@@ -135,5 +154,13 @@ mod tests {
         assert_eq!(index_entry.file_size, 2);
         assert_eq!(index_entry.file_size, 2);
         println!("{:?}", index_entry);
+    }
+
+    #[test]
+    fn test_parse_index() {
+        let d = include_bytes!("../.git/modules/test_data/index");
+        let index = parse_index(d);
+
+        println!("{:?}", index);
     }
 }
