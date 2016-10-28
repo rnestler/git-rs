@@ -60,7 +60,8 @@ mod tests {
     #[test]
     fn test_parse_header() {
         let d = include_bytes!("../.git/modules/test_data/index");
-        let header = parse_header(d);
-        println!("{:?}", header);
+        let header = parse_header(d).unwrap().1;
+        assert_eq!(header.version, 2);
+        assert_eq!(header.index_entries, 1);
     }
 }
