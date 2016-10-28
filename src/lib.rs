@@ -1,9 +1,10 @@
 #[macro_use]
 extern crate nom;
 
-use nom::{IResult, be_u32, length_value};
+use nom::{IResult, be_u16, be_u32, length_value};
 
-pub struct IndexEntry {
+#[derive(Debug)]
+pub struct IndexEntry<'a> {
     pub ctime_s: u32,
     pub ctime_ns: u32,
     pub mtime_s: u32,
@@ -14,8 +15,42 @@ pub struct IndexEntry {
     pub uid: u32,
     pub gid: u32,
     pub file_size: u32,
-    pub sha_1: [u8; 20],
+    /// 20 bytes SHA1 sum
+    pub sha_1: &'a [u8],
     pub flags: u16,
+}
+
+pub fn parse_index_entry(input: &[u8]) -> IResult<&[u8], IndexEntry> {
+    chain!(input,
+           ctime_s: be_u32 ~
+           ctime_ns: be_u32 ~
+           mtime_s: be_u32 ~
+           mtime_ns: be_u32 ~
+           dev: be_u32 ~
+           ino: be_u32 ~
+           mode: be_u32 ~
+           uid: be_u32 ~
+           gid: be_u32 ~
+           file_size: be_u32 ~
+           sha_1: take!(20) ~
+           flags: be_u16,
+           || {
+               IndexEntry {
+                   ctime_s: ctime_s,
+                   ctime_ns: ctime_ns,
+                   mtime_s: mtime_s,
+                   mtime_ns: mtime_ns,
+                   dev: dev,
+                   ino: ino,
+                   mode: mode,
+                   uid: uid,
+                   gid: gid,
+                   file_size: file_size,
+                   sha_1: sha_1,
+                   flags: flags,
+               }
+           }
+    )
 }
 
 pub struct IndexExtension<'a> {
@@ -65,7 +100,7 @@ pub fn parse_header(input: &[u8]) -> IResult<&[u8], IndexHeader> {
 
 pub struct Index<'a> {
     pub header: IndexHeader,
-    pub entries: Vec<IndexEntry>,
+    pub entries: Vec<IndexEntry<'a>>,
     pub extensions: Vec<IndexExtension<'a>>,
     pub sha1_checksum: [u8; 20],
 }
@@ -88,5 +123,17 @@ mod tests {
 
         assert_eq!(extension.signature, b"ABCD");
         assert_eq!(extension.data, &[2]);
+    }
+
+    #[test]
+    fn test_parse_index_entry() {
+        let d = include_bytes!("../.git/modules/test_data/index");
+        let header = parse_header(d).unwrap();
+
+        let index_entry = parse_index_entry(header.0).unwrap().1;
+
+        assert_eq!(index_entry.file_size, 2);
+        assert_eq!(index_entry.file_size, 2);
+        println!("{:?}", index_entry);
     }
 }
